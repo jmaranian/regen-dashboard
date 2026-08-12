@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RE:GEN — Member Experience Dashboard</title>
+<style>
+:root{
+  color-scheme: light;
+  --surface-1:#fcfcfb; --plane:#f9f9f7; --raised:#ffffff;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --rule:#c3c2b7; --ring:rgba(11,11,11,0.10);
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --good-ink:#006300; --accent:#2a78d6;
+  --wash-critical:rgba(208,59,59,.08); --wash-serious:rgba(236,131,90,.10);
+  --wash-warning:rgba(250,178,25,.12); --wash-good:rgba(12,163,12,.08);
+  --wash-accent:rgba(42,120,214,.08);
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --surface-1:#1a1a19; --plane:#0d0d0d; --raised:#212120;
+  --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --rule:#383835; --ring:rgba(255,255,255,0.10);
+  --good-ink:#0ca30c; --accent:#3987e5;
+  --wash-critical:rgba(208,59,59,.16); --wash-serious:rgba(236,131,90,.16);
+  --wash-warning:rgba(250,178,25,.16); --wash-good:rgba(12,163,12,.14);
+  --wash-accent:rgba(57,135,229,.14);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--plane); color:var(--ink);
+  font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 20px 80px}
+
+/* ---------- header ---------- */
+header{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+h1{font-size:20px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13px}
+.hbtns{display:flex;gap:8px;align-items:center}
+button,.btn{
+  font:inherit;font-size:13px;border:1px solid var(--ring);background:var(--raised);
+  color:var(--ink);border-radius:8px;padding:7px 12px;cursor:pointer;
+}
+button:hover{background:var(--wash-accent);border-color:var(--accent)}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:22px}
+.tile{background:var(--surface-1);border:1px solid var(--ring);border-radius:12px;padding:14px 16px}
+.tile .v{font-size:30px;line-height:1.1;font-weight:600;letter-spacing:-.02em}
+.tile .k{font-size:12px;color:var(--ink-2);margin-top:5px}
+.tile.crit .v{color:var(--critical)} .tile.warn .v{color:var(--warning)}
+.tile.ok .v{color:var(--good-ink)} .tile.acc .v{color:var(--accent)}
+
+/* ---------- tabs ---------- */
+nav.tabs{display:flex;gap:4px;border-bottom:1px solid var(--grid);margin-bottom:20px;flex-wrap:wrap}
+nav.tabs button{
+  border:0;border-bottom:2px solid transparent;background:none;border-radius:0;
+  padding:9px 14px;color:var(--ink-2);font-size:14px;
+}
+nav.tabs button:hover{background:var(--wash-accent)}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+nav.tabs .cnt{
+  display:inline-block;margin-left:6px;font-size:11px;padding:1px 6px;border-radius:20px;
+  background:var(--grid);color:var(--ink-2);font-variant-numeric:tabular-nums;
+}
+nav.tabs button[aria-selected="true"] .cnt{background:var(--accent);color:#fff}
+section[hidden]{display:none}
+
+/* ---------- toolbar ---------- */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+input[type=search]{
+  font:inherit;font-size:13px;padding:7px 11px;border-radius:8px;
+  border:1px solid var(--ring);background:var(--raised);color:var(--ink);min-width:200px;
+}
+.chip{
+  font-size:12px;padding:5px 11px;border-radius:20px;border:1px solid var(--ring);
+  background:var(--raised);color:var(--ink-2);cursor:pointer;
+}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ---------- cards ---------- */
+.card{
+  background:var(--surface-1);border:1px solid var(--ring);border-left:3px solid var(--rule);
+  border-radius:10px;margin-bottom:10px;overflow:hidden;
+}
+.card.s-critical{border-left-color:var(--critical)}
+.card.s-serious{border-left-color:var(--serious)}
+.card.s-warning{border-left-color:var(--warning)}
+.card.s-good{border-left-color:var(--good)}
+.card.s-accent{border-left-color:var(--accent)}
+.card > .head{
+  display:flex;gap:12px;align-items:flex-start;padding:13px 16px;cursor:pointer;
+  user-select:none;
+}
+.card > .head:hover{background:var(--wash-accent)}
+.head .who{font-weight:600;font-size:15px}
+.head .mid{flex:1;min-width:0}
+.head .act{font-size:13px;color:var(--ink-2);margin-top:3px}
+.head .rt{display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.caret{color:var(--muted);font-size:12px;transition:transform .15s;flex-shrink:0;margin-top:3px}
+.card.open .caret{transform:rotate(90deg)}
+.body{padding:0 16px 16px 16px;border-top:1px solid var(--grid);padding-top:14px}
+.card:not(.open) .body{display:none}
+
+/* ---------- badges ---------- */
+.badge{
+  display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;
+  padding:3px 9px;border-radius:20px;border:1px solid transparent;white-space:nowrap;
+}
+.b-critical{background:var(--wash-critical);color:var(--critical);border-color:var(--critical)}
+.b-serious{background:var(--wash-serious);color:#a8461c;border-color:var(--serious)}
+.b-warning{background:var(--wash-warning);color:#7a5200;border-color:var(--warning)}
+.b-good{background:var(--wash-good);color:var(--good-ink);border-color:var(--good)}
+.b-accent{background:var(--wash-accent);color:var(--accent);border-color:var(--accent)}
+.b-mute{background:var(--grid);color:var(--ink-2);border-color:var(--rule)}
+:root[data-theme="dark"] .b-serious{color:#f0a883}
+:root[data-theme="dark"] .b-warning{color:#fac95e}
+
+/* ---------- gates ---------- */
+.gates{display:flex;gap:3px;align-items:center}
+.gate{
+  width:26px;height:7px;border-radius:4px;background:var(--grid);
+  position:relative;
+}
+.gate.on{background:var(--good)}
+.gate.miss{background:var(--critical)}
+.gate.na{background:var(--grid);opacity:.4}
+.gatelab{font-size:11px;color:var(--muted);margin-left:6px;white-space:nowrap}
+
+/* ---------- detail blocks ---------- */
+.kv{margin:0 0 12px}
+.kv .k{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:3px;font-weight:600}
+.kv .v{font-size:13.5px;color:var(--ink-2);line-height:1.55}
+.copybox{
+  background:var(--raised);border:1px solid var(--ring);border-radius:9px;
+  padding:13px 14px;position:relative;margin-bottom:8px;
+}
+.copybox pre{
+  margin:0;font:inherit;font-size:13.5px;white-space:pre-wrap;word-wrap:break-word;
+  color:var(--ink);line-height:1.6;
+}
+.copybar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px}
+.copybar .lab{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.copybtn{font-size:12px;padding:4px 10px}
+.copybtn.done{background:var(--wash-good);border-color:var(--good);color:var(--good-ink)}
+.note{
+  font-size:12.5px;color:var(--ink-2);background:var(--wash-warning);
+  border-left:2px solid var(--warning);padding:8px 11px;border-radius:0 6px 6px 0;margin-bottom:12px;
+}
+.flagbox{
+  font-size:13px;color:var(--ink-2);background:var(--wash-critical);
+  border-left:2px solid var(--critical);padding:10px 12px;border-radius:0 6px 6px 0;margin-bottom:12px;
+}
+
+/* ---------- progress ---------- */
+.prog{display:flex;gap:3px;margin:6px 0 2px}
+.dot{width:20px;height:7px;border-radius:4px;background:var(--grid)}
+.dot.on{background:var(--accent)}
+
+/* ---------- timeline ---------- */
+.tl{border-left:2px solid var(--grid);padding-left:14px;margin:4px 0 0}
+.tl li{list-style:none;margin-bottom:9px;position:relative;font-size:13px;color:var(--ink-2)}
+.tl li::before{
+  content:"";position:absolute;left:-19px;top:6px;width:7px;height:7px;border-radius:50%;
+  background:var(--grid);border:2px solid var(--surface-1);
+}
+.tl li.now::before{background:var(--accent)}
+.tl li b{color:var(--ink);font-weight:600}
+
+.empty{color:var(--muted);font-size:14px;padding:26px;text-align:center;
+  border:1px dashed var(--rule);border-radius:10px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:14px}
+.legend span{display:flex;gap:5px;align-items:center}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+h2.sec{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  margin:24px 0 10px;font-weight:600}
+h2.sec:first-child{margin-top:0}
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--grid);
+  font-size:12px;color:var(--muted);line-height:1.7}
+@media (max-width:640px){
+  .head .rt{width:100%;justify-content:flex-start;margin-top:6px}
+  .card > .head{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Member Experience Dashboard</h1>
+    <div class="sub" id="stamp"></div>
+  </div>
+  <div class="hbtns">
+    <button id="themeBtn" type="button">Dark</button>
+  </div>
+</header>
+
+<div class="tiles" id="tiles"></div>
+
+<nav class="tabs" id="tabs" role="tablist"></nav>
+
+<section id="p-queue"></section>
+<section id="p-reviews" hidden></section>
+<section id="p-onramp" hidden></section>
+<section id="p-birthdays" hidden></section>
+<section id="p-drift" hidden></section>
+
+<footer id="foot"></footer>
+</div>
+
+<script>
+// RE:GEN Member Experience Dashboard — data layer
+// Regenerated daily. Everything the UI renders comes from this object.
+const DASH = {
+  generated: "2026-08-11T14:30:00-06:00",
+  today: "2026-08-11",
+  links: {
+    form: "[FORM LINK]",
+    booking: "[BOOKING LINK]"
+  },
+
+  // ---------------------------------------------------------------- reviews
+  reviews: [
+    {
+      name: "Sarah Wheeler", due: "2026-07-28", tenure: "3 years",
+      invited: true, form: null, booked: null, completed: null,
+      away: { until: "2026-08-15", why: "Florida, scuba certification" },
+      awayUnverified: true,
+      priority: 1, bucket: "overdue",
+      action: "Chase form — final nudge",
+      why: "Invitation went out, nothing back. 14 days past her review date.",
+      context: "Volume PR on bench before she left. Longest-tenured member on the list.",
+      copy: "Hey Sarah, it's Emily! Last nudge on the goal review form. If it's easier to just talk it through in person, that works too. Either way, let's get you booked: [BOOKING LINK]",
+      copyNote: "Day-7 copy from the sequence. At 14 days this is the one that offers her an out."
+    },
+    {
+      name: "Lauren Collins", due: "2026-07-31", tenure: "1 year",
+      invited: true, form: "2026-07-30", booked: null, completed: null,
+      away: { until: "2026-08-17", why: "Funeral in North Carolina" },
+      priority: 99, bucket: "hold",
+      action: "Hold until next week",
+      why: "Form came in Jul 30. Only the booking is missing, and she is out of town for a funeral.",
+      context: "Form says: consistency 3 days a week, working through lingering aches. Asked for a Ladies of RE:GEN happy hour. No jump roping, Walter.",
+      copy: "Hey Lauren, it's Emily! Thinking of you this week. Whenever you're settled back in let's get your goal review on the calendar: [BOOKING LINK]. No rush at all.",
+      copyNote: "Do not send the standard chase. Send this when she is back, around Aug 17."
+    },
+    {
+      name: "Maria Seeke", due: "2026-08-05", tenure: "9 months",
+      invited: true, form: "2026-08-10", booked: null, completed: null,
+      away: null, claimedBooked: true,
+      priority: 2, bucket: "overdue",
+      action: "Chase booking — she believes she already booked",
+      why: "Form in Aug 10 at 2:19pm and she ticked \"I have scheduled my goal review.\" Nothing on the calendar through Aug 26.",
+      context: "80+ workouts completed. Wants a home core circuit, wants bodyweight movements phased into weighted because circuits are getting easy, wants bicep and tricep work after Sept 7. Challenges are packing lunches and water intake.",
+      copy: "Hey Maria, it's Emily! Thank you for getting your goal review form in, 80 plus workouts is no joke. It looks like the booking didn't come through on our end, so let's make sure we get you on the calendar: [BOOKING LINK]. And yes to a home core circuit, and yes to putting weight on some of those bodyweight movements. Let's map it out when we sit down.",
+      copyNote: "Do not imply she forgot. The booking link failing is the more likely story and it keeps her from feeling caught out."
+    },
+    {
+      name: "Carolyn Bell", due: "2026-08-04", tenure: "9 months",
+      invited: true, form: "2026-07-31", booked: null, completed: null,
+      away: null,
+      priority: 3, bucket: "overdue",
+      action: "Chase booking",
+      why: "Form in Jul 31. No conversation booked. 7 days past.",
+      context: "Proud of building the habit, knee and feet doing much better. Three month goal is climbing the Manitou Incline. Needs 5:30am or Saturday slots once kids' activities start. Asked for more bad jokes.",
+      copy: "Hey Carolyn, it's Emily! We've got your goal review form, thank you for that. Now we just need to get you booked: [BOOKING LINK]. The Manitou Incline as a three month goal is a great one, that gives us something real to build toward.",
+      copyNote: "Naming the Incline back to her proves a person read the form."
+    },
+    {
+      name: "Elisa Welch", due: "2026-08-04", tenure: "9 months",
+      invited: true, form: null, booked: null, completed: null,
+      away: null,
+      priority: 4, bucket: "overdue",
+      action: "Chase form",
+      why: "Invitation went out, no form, no booking. 7 days past.",
+      context: "Currently flagged Deload.",
+      copy: "Hey Elisa, it's Emily! Still need to grab your goal review form before we sit down. Here's the link: [FORM LINK]",
+      copyNote: "Day-5 copy from the sequence."
+    },
+    {
+      name: "Rita Kerdock", due: "2026-08-13", tenure: "3 months",
+      invited: true, form: null, booked: null, completed: null,
+      away: null,
+      priority: 5, bucket: "thisweek",
+      action: "Chase form — review is Thursday",
+      why: "Invitation sent. No form yet and the review date is 2 days out.",
+      context: "First goal review since joining in May. Currently on the unexplained check-in list for attendance, so this conversation matters more than usual. Birthday was Aug 5.",
+      copy: "Hey Rita, it's Emily! Just checking you got the goal review form. It only takes about ten minutes and it makes our conversation way more useful. Here's the link again: [FORM LINK]",
+      copyNote: "Her first review. Worth Josh or a coach also catching her on the floor."
+    },
+    {
+      name: "Tony Armas", due: "2026-08-14", tenure: "1 year",
+      invited: true, form: null, booked: null, completed: null,
+      away: null, birthdaySoon: "2026-08-12",
+      priority: 6, bucket: "thisweek",
+      action: "Birthday tomorrow, then chase form Thursday",
+      why: "Invitation sent, no form. Review due Friday. His birthday lands tomorrow so the two messages need separating.",
+      context: "Working two jobs on around 3 hours of sleep. Knee pain forced swapping squats for step-downs and there is new elbow pain to monitor. He has been pushing through fatigued.",
+      copy: "Happy birthday Tony!! Hope you get a real break today, you have been grinding lately. See you soon.",
+      copy2: "Hey Tony, it's Emily! Just checking you got the goal review form. It only takes about ten minutes and it makes our conversation way more useful. Here's the link again: [FORM LINK]",
+      copyNote: "Birthday message Aug 12. Form chase Aug 13, not the same day. Given the sleep and the pain, this review should be a real check-in, not a formality."
+    },
+    {
+      name: "Chris Thomas", due: "2026-08-11", tenure: "4 months",
+      invited: true, form: "2026-08-05", booked: "2026-08-11T09:00", completed: null,
+      away: null,
+      priority: 7, bucket: "today",
+      action: "Sitting down today at 9:00am",
+      why: "Form in, conversation booked, happening this morning.",
+      context: "Form says his win is better commitment to moderate exercise and the challenge is keeping appointments through busy work months. He and Julie will be traveling much more, sometimes a full month at a time, and he asked about an ad hoc schedule. PRs on RDL and DB bench, improving flexion on ATG split squats despite knee replacement limits.",
+      copy: "",
+      copyNote: "The travel schedule question is the whole conversation. He is telling you he needs a flexible structure or he will drift. Have an answer ready."
+    },
+    {
+      name: "Missy Eisenach", due: "2026-08-14", tenure: "11 months",
+      invited: true, form: "2026-07-29", booked: "2026-08-14T09:00", completed: null,
+      away: null,
+      priority: 20, bucket: "set",
+      action: "All set — Friday 9:00am",
+      why: "Form in Jul 29, conversation booked.",
+      context: "Proud of consistency, strength gain, going outside her comfort zone. Wants strength gains plus leaning up. Loves the outside-the-gym challenges for accountability. Working on getting her husband in.",
+      copy: "",
+      copyNote: "The referral is already warm. She raised it herself."
+    },
+    {
+      name: "Ryan Mease", due: "2026-08-14", tenure: "1 year",
+      invited: true, form: "2026-08-04", booked: "2026-08-14T12:00", completed: null,
+      away: null,
+      priority: 21, bucket: "set",
+      action: "All set — Friday 12:00pm",
+      why: "Form in Aug 4, conversation booked.",
+      context: "Setting all-time PRs. Wants continued 1RM progression, more steps, keeps the sauna goal. Asked for an additional afternoon or evening class, or another Saturday morning. Work travel likely Sept and Oct, family travel Nov and Dec.",
+      copy: "",
+      copyNote: "He asked for more schedule options. That is a capacity signal worth logging, not just a personal request."
+    },
+    {
+      name: "Spencer Heinemann", due: "2026-08-17", tenure: "1 year",
+      invited: true, form: "2026-08-06", booked: "2026-08-17T07:30", completed: null,
+      away: null, unaccepted: true,
+      priority: 8, bucket: "thisweek",
+      action: "Confirm — he and Emily never accepted the calendar invite",
+      why: "Form in and time booked for Monday 7:30am, but the invite still shows as unanswered by both Spencer and Emily.",
+      context: "Good progress toward 1RM on the big three. Wants 1RM training with no injuries, nutrition is the outside challenge, looking forward to the September nutrition challenge and wants a cut. Asked for a gym puppy.",
+      copy: "Hey Spencer, it's Emily! Just confirming you're still good for Monday at 7:30 for your goal review. Thanks for getting your form in already.",
+      copyNote: "Emily should also accept the invite so it stops looking unconfirmed on your end."
+    },
+    {
+      name: "Jenn Opitz", due: "2026-08-18", tenure: "1 year",
+      invited: false, form: null, booked: null, completed: null,
+      away: { until: "2026-08-11", why: "Was traveling Thu through Mon" },
+      priority: 9, bucket: "thisweek",
+      action: "Send invitation today",
+      why: "Review is Aug 18. The 7-day invitation lead means it goes out today.",
+      context: "Recent low-energy filler day noted. Flagged Travel and Deload.",
+      copy: "Hey Jenn, it's Emily! You're coming up on your next goal review. We just sent you an email with the form and a link to book your conversation.",
+      copyNote: "Email plus text together, per the recurring invitation touchpoint."
+    },
+    {
+      name: "Ty Maxey", due: "2026-08-18", tenure: "3 months",
+      invited: false, form: null, booked: null, completed: null,
+      away: { until: "2026-08-15", why: "Glenwood Springs golf tournament" },
+      priority: 10, bucket: "thisweek",
+      action: "Send invitation today — he is back Aug 15, the date works",
+      why: "Review is Aug 18 and the invitation is due today. He is away this week but back before the review date.",
+      context: "First goal review since May. Progressing well, ankle flexion still limiting. Program was adjusted around the tournament.",
+      copy: "Hey Ty, it's Emily! You're coming up on your first goal review. We just sent you an email with the form and a link to book your conversation. Hope the tournament went well.",
+      copyNote: "Sending during his trip is fine per your rule. The tournament line makes it land as a person, not a system."
+    },
+    {
+      name: "Natan Wallace", due: "2026-08-20", tenure: "6 months",
+      invited: false, form: null, booked: null, completed: null,
+      away: null,
+      priority: 11, bucket: "next2weeks",
+      action: "Invitation due Aug 13",
+      why: "Review Aug 20. Invitation goes out 7 days prior.",
+      context: "Flagged Travel, Returning, Aggravation.",
+      copy: "Hey Natan, it's Emily! You're coming up on your next goal review. We just sent you an email with the form and a link to book your conversation.",
+      copyNote: ""
+    },
+    {
+      name: "Dom Brown", due: "2026-08-23", tenure: "2 years",
+      invited: false, form: null, booked: null, completed: null,
+      away: null,
+      priority: 12, bucket: "next2weeks",
+      action: "Invitation due Aug 16",
+      why: "Review Aug 23.",
+      context: "On the unexplained check-in list for attendance. This review is the natural place to open that conversation.",
+      copy: "Hey Dom, it's Emily! You're coming up on your next goal review. We just sent you an email with the form and a link to book your conversation.",
+      copyNote: "Attendance has been below target with no logged reason. Worth Josh joining this one."
+    },
+    {
+      name: "Kimberley Benjamin", due: "2026-08-24", tenure: "6 months",
+      invited: false, form: null, booked: null, completed: null,
+      away: { until: "2026-08-17", why: "Family in town, hectic schedule" },
+      priority: 13, bucket: "next2weeks",
+      action: "Invitation due Aug 17",
+      why: "Review Aug 24.",
+      context: "Progressing, minor elbow twinge to monitor. Family in town may affect attendance.",
+      copy: "Hey Kimberley, it's Emily! You're coming up on your next goal review. We just sent you an email with the form and a link to book your conversation.",
+      copyNote: ""
+    },
+    {
+      name: "Holly Smith", due: "2026-08-26", tenure: "6 months",
+      invited: false, form: null, booked: null, completed: null,
+      away: null,
+      priority: 14, bucket: "next2weeks",
+      action: "Invitation due Aug 19",
+      why: "Review Aug 26. Just outside the two week window but the invitation falls inside it.",
+      context: "No status flags. Birthday Sep 1.",
+      copy: "Hey Holly, it's Emily! You're coming up on your next goal review. We just sent you an email with the form and a link to book your conversation.",
+      copyNote: ""
+    },
+    {
+      name: "Travis Willis", due: "2026-07-30", tenure: "3 months",
+      invited: true, form: "2026-08-03", booked: null, completed: "2026-08-05",
+      away: null,
+      priority: 100, bucket: "done",
+      action: "Complete — Aug 5",
+      why: "Review happened Aug 5. Notion still shows him at Invitation sent.",
+      context: "Proud of showing up consistently and the accountability. Wants steady strength and stamina. Likely two weeks in Europe in September.",
+      copy: "",
+      copyNote: "Log the forward goal so the next review has something to measure against."
+    },
+    {
+      name: "Lenore Smith", due: "2026-08-03", tenure: "3 months",
+      invited: true, form: "2026-07-31", booked: null, completed: "2026-08-05",
+      away: null,
+      priority: 101, bucket: "done",
+      action: "Complete — Aug 5",
+      why: "Review happened Aug 5. Notion still shows her at Invitation sent.",
+      context: "First review. Proud of starting a routine and sticking with it, and adding a third weekly workout. Wants to stay the course and lose some inches.",
+      copy: "",
+      copyNote: "She added a third day on her own. Worth naming that back to her."
+    }
+  ],
+
+  // ---------------------------------------------------------------- onramp
+  onramp: [
+    {
+      name: "Julie Elser", start: "2026-07-29",
+      session: 5, of: 8, week: 3,
+      notionSays: "Week 2", drift: true,
+      lastSession: "2026-08-11",
+      schedule: [],
+      next: {
+        tp: 10, label: "Halfway check-in text", due: "2026-08-12",
+        channel: "Text", owner: "Emily (automated, Emily handles replies)"
+      },
+      upcoming: [
+        { tp: 11, label: "Day before last OnRamp session", due: "2026-08-23" },
+        { tp: 12, label: "Completion moment + letterboard photo", due: "~2026-08-25" }
+      ],
+      goal: "A consistent, lifelong training routine. Wants to age like her father and stay capable into her 60s and 70s. Training should hold up her gardening.",
+      watch: "Chronic neck pain tied to a leg length discrepancy. Right shoulder instability flagged by her PT. Low training age, no strength work in about 6 years.",
+      lastNote: "Kettlebell cleans at 26 lbs for all three sets. Intimidating at first and she kept looking for validation, but got faster, snappier and taller with each rep. ATG split squats looked fantastic with surprising mobility. Core bracing on bar pushups is the hard part right now. Very teachable and eager.",
+      copy: "Hey Julie, it's Emily! You are half way through OnRamp! Josh told me your split squats looked fantastic this week and that you handled the kettlebell cleans way better than you expected to. How are you feeling two weeks in?",
+      copyNote: "Base copy is the READY halfway text. The middle line is the added context from Josh's session note. Keep it to one specific thing, not a list.",
+      flag: null
+    },
+    {
+      name: "Stephanie Davis", start: "2026-08-03",
+      session: 3, of: 8, week: 2,
+      notionSays: "Week 2", drift: false,
+      lastSession: "2026-08-10",
+      schedule: [
+        { n: 4, date: "2026-08-13" }, { n: 5, date: "2026-08-20" },
+        { n: 6, date: "2026-08-26" }, { n: 7, date: "2026-08-27" },
+        { n: 8, date: "2026-08-29" }
+      ],
+      next: {
+        tp: 10, label: "Halfway check-in text", due: "2026-08-17",
+        channel: "Text", owner: "Emily (automated, Emily handles replies)"
+      },
+      upcoming: [
+        { tp: 11, label: "Day before last OnRamp session", due: "2026-08-28" },
+        { tp: 12, label: "Completion moment + letterboard photo", due: "2026-08-29" }
+      ],
+      goal: "Longevity — keep golfing, traveling and staying independent into her 60s and 70s. Muscle definition, especially lower body. Needs the accountability of a scheduled appointment to stay consistent.",
+      watch: "Herniated disc about 7 years ago, recovered without surgery. Prior knee surgery. Current golfer's elbow. Knee pain from forward lunges without glute activation. Avoid heavy arm and shoulder work on golf days.",
+      lastNote: "Exceptional form quality across all movements with very limited weaknesses. Excellent hip mobility, external rotation and overhead mobility made corrections hard to find. Band around the knees fixed a slight valgus in goblet squats and worked really well. Fought hard through Z press and added reps on the last set.",
+      copy: "Hey Stephanie, it's Emily! You are half way through OnRamp! Josh mentioned your form has been so clean he's been having a hard time finding things to correct. How are you feeling so far?",
+      copyNote: "She came from Reps and Restore and left partly over coaching quality. Telling her a coach is impressed is the exact reassurance that matters here.",
+      flag: "Her end-of-week-one text and the RE:GEN hub email were both due Aug 10. Confirm those went out before the halfway text lands, or she gets the halfway message having never had the week one one."
+    }
+  ],
+
+  // ------------------------------------------------------------- pt clients
+  ptClients: [
+    {
+      name: "Samantha Staggs", start: "2026-08-11",
+      package: "24 sessions over 8 weeks, 1:1 personal training plus nutrition coaching",
+      note: "Not an OnRamp member. She is on a fixed-term 1:1 package with a hard end date, so the OnRamp text sequence does not apply to her and should not fire.",
+      mediaOptOut: true,
+      away: [{ from: "2026-08-14", to: "2026-08-16", why: "Kentucky" }, { from: "2026-08-28", to: "2026-08-30", why: "Blackout" }],
+      schedule: "This week Tue/Wed/Thu 5:30am. From Aug 17 onward Mon/Wed/Thu 6:30am through Oct 1.",
+      flag: "Media opt-out signed. No photos, video or likeness in any RE:GEN content, ever. That means no letterboard photo and no milestone post for her."
+    }
+  ],
+
+  // ------------------------------------------------------------- birthdays
+  birthdays: [
+    { name: "Tony Armas", date: "2026-08-12", days: 1, note: "Goal review also due Aug 14. Send the birthday message on its own day." },
+    { name: "Holly Smith", date: "2026-09-01", days: 21, note: "" },
+    { name: "Missy Eisenach", date: "2026-09-25", days: 45, note: "" }
+  ],
+  birthdaysPassed: [
+    { name: "Rita Kerdock", date: "2026-08-05", note: "Passed 6 days ago. Confirm it was acknowledged." },
+    { name: "Michael Ehrfurth", date: "2026-08-07", note: "Passed 4 days ago. Confirm it was acknowledged." }
+  ],
+
+  // ------------------------------------------------------------------ drift
+  drift: [
+    {
+      severity: "critical",
+      title: "Next Review Date is computed from Start Date and disagrees with reality",
+      detail: "The field runs a quarterly anniversary off each member's start date. Actual practice books off the last completed review. Chris Thomas' field says Oct 20 and he sat down today. Missy says Sep 25, Ryan says Oct 16, Spencer says Oct 21 — all three are on the calendar this week.",
+      fix: "Recompute Next Review Date as last completed review plus 3 months, with Start Date plus 90 days seeding only the first review. Until that changes, this dashboard uses the corrected rule and ignores the field."
+    },
+    {
+      severity: "warning",
+      title: "Review Stage is set at invitation and never updated after",
+      detail: "Travis Willis and Lenore Smith both completed reviews on Aug 5 and are still sitting at Invitation sent. Nobody in the database is at Conversation booked or Completed despite four booked and three done.",
+      fix: "Set Travis and Lenore to Completed. Going forward the stage moves when Emily logs the invitation date, and the rest is inferred from Gmail and the calendar."
+    },
+    {
+      severity: "warning",
+      title: "No field captures when the invitation was sent",
+      detail: "Without that one date the reminder cadence cannot be computed, which is why nothing tells you Rita's and Tony's reminders are already late.",
+      fix: "Add an Invitation Sent date to the Members database. Emily enters one date per member per quarter and this dashboard derives reminder 1, 2 and 3 from it automatically."
+    },
+    {
+      severity: "warning",
+      title: "Status Notes carry relative dates that go stale",
+      detail: "Session notes say things like \"out all next week\" and the status sync copies that wording verbatim. Read a week later it points at the wrong week. This is exactly how Ty Maxey looked unavailable for a review he can make.",
+      fix: "Have the daily status sync resolve relative dates into real ones when it writes, and add an Away Until date field. Sarah Wheeler's and Kelly Buster's Florida trips need the same check."
+    },
+    {
+      severity: "serious",
+      title: "Julie Elser is logged as Week 2 and is on Week 3",
+      detail: "Her session note from today reads OnRamp Day 5. The OnRamp Status field lags because it is set by hand.",
+      fix: "Drive OnRamp position off the session note count rather than the select field, or update the field daily from it."
+    },
+    {
+      severity: "serious",
+      title: "Samantha Staggs is in the members database as OnRamp Not started",
+      detail: "She is a fixed-term 1:1 personal training client, not a semi-private member coming through OnRamp. If the onboarding automation keys off her record she will start receiving OnRamp texts that do not describe anything she is doing.",
+      fix: "Give her a distinct status so the OnRamp sequence skips her, and flag the media opt-out on her record so no one posts about her."
+    },
+    {
+      severity: "good",
+      title: "Form notification emails started working Aug 5",
+      detail: "Six of the nine recent submissions never generated an email. Chris Thomas at 12:19pm on Aug 5 was the first one that did. Everything before that exists only inside Gym Lead Machine.",
+      fix: "Nothing to fix going forward. Gmail is a reliable feed from Aug 5 onward, which is what makes the daily automation trustworthy."
+    }
+  ],
+
+  // ------------------------------------------------------------- pipeline
+  sequence: [
+    { day: 0, label: "Invitation email + text" },
+    { day: 2, label: "Reminder 1 (day 3 text)" },
+    { day: 4, label: "Reminder 2 (day 5 text)" },
+    { day: 6, label: "Reminder 3 (day 7 text, offers the out)" },
+    { day: 7, label: "Stop. Note it. Catch them in person." }
+  ]
+};
+
+</script>
+
+<script>
+(function(){
+"use strict";
+const $=(s,r)=>(r||document).querySelector(s);
+const TODAY=new Date(DASH.today+"T12:00:00");
+const MS=864e5;
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function d(str){ return new Date(str.length>10?str:str+"T12:00:00"); }
+function days(str){ return Math.round((d(str)-TODAY)/MS); }
+function fmt(str){
+  const x=d(str);
+  return x.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+}
+function fmtT(str){
+  const x=d(str);
+  return x.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})+", "+
+         x.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}).toLowerCase().replace(" ","");
+}
+function rel(str){
+  const n=days(str);
+  if(n===0) return "today";
+  if(n===1) return "tomorrow";
+  if(n===-1) return "yesterday";
+  if(n<0) return Math.abs(n)+" days ago";
+  return "in "+n+" days";
+}
+
+/* ---------------- shared render helpers ---------------- */
+function badge(cls,txt){ return '<span class="badge b-'+cls+'">'+esc(txt)+'</span>'; }
+
+function gates(r){
+  const g=[
+    {on:r.invited, lab:"invited"},
+    {on:!!r.form, lab:"form"},
+    {on:!!r.booked||!!r.completed, lab:"booked"},
+    {on:!!r.completed, lab:"done"}
+  ];
+  let firstMiss=-1;
+  for(let i=0;i<4;i++){ if(!g[i].on){ firstMiss=i; break; } }
+  const overdue=days(r.due)<0 && !r.completed;
+  let h='<span class="gates" title="invited / form / booked / done">';
+  g.forEach((x,i)=>{
+    let c="gate";
+    if(x.on) c+=" on";
+    else if(i===firstMiss && overdue) c+=" miss";
+    else c+=" na";
+    h+='<span class="'+c+'"></span>';
+  });
+  let lab;
+  if(r.completed||firstMiss<0) lab="complete";
+  else if(firstMiss===3) lab="booked, conversation still to happen";
+  else lab="waiting on: "+g[firstMiss].lab;
+  h+='</span><span class="gatelab">'+lab+'</span>';
+  return h;
+}
+
+function copyBlock(label,text,idx){
+  if(!text) return "";
+  return '<div class="copybar"><span class="lab">'+esc(label)+'</span>'+
+    '<button class="copybtn" type="button" data-copy="'+idx+'">Copy</button></div>'+
+    '<div class="copybox"><pre id="cp'+idx+'">'+esc(text)+'</pre></div>';
+}
+
+/* Copy that survives an embed. navigator.clipboard needs a secure context AND
+   clipboard-write permission, and a cross-origin iframe (Notion) may withhold
+   either. Fall back to execCommand, then to selecting the text. */
+function copyText(txt){
+  try{
+    if(navigator.clipboard && window.isSecureContext){
+      return navigator.clipboard.writeText(txt).then(()=>true).catch(()=>legacyCopy(txt));
+    }
+  }catch(e){}
+  return Promise.resolve(legacyCopy(txt));
+}
+function legacyCopy(txt){
+  try{
+    const ta=document.createElement("textarea");
+    ta.value=txt;
+    ta.setAttribute("readonly","");
+    ta.style.cssText="position:fixed;top:0;left:0;opacity:0;pointer-events:none";
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0,txt.length);
+    const ok=document.execCommand("copy");
+    document.body.removeChild(ta);
+    return !!ok;
+  }catch(e){ return false; }
+}
+function selectNode(el){
+  try{
+    const r=document.createRange(); r.selectNodeContents(el);
+    const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }catch(e){}
+}
+
+let cpN=0;
+function kv(k,v){ return v?'<div class="kv"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div></div>':""; }
+
+/* ---------------- review card ---------------- */
+function sevOf(r){
+  if(r.bucket==="done") return "good";
+  if(r.bucket==="set") return "good";
+  if(r.bucket==="today") return "accent";
+  if(r.bucket==="hold") return "warning";
+  if(r.bucket==="overdue") return "critical";
+  if(r.bucket==="thisweek") return "serious";
+  return "warning";
+}
+
+function reviewCard(r){
+  const sev=sevOf(r);
+  const od=days(r.due);
+  let tags="";
+  if(r.bucket==="overdue") tags+=badge("critical","▲ "+Math.abs(od)+" days overdue");
+  else if(r.bucket==="today") tags+=badge("accent","● today");
+  else if(r.bucket==="done") tags+=badge("good","✓ complete");
+  else if(r.bucket==="set") tags+=badge("good","✓ booked");
+  else if(r.bucket==="hold") tags+=badge("warning","⏸ hold");
+  else tags+=badge("serious","due "+rel(r.due));
+  if(r.claimedBooked) tags+=badge("critical","✕ said booked, isn't");
+  if(r.unaccepted) tags+=badge("warning","⚠ invite unaccepted");
+  if(r.away && days(r.away.until)>0) tags+=badge("mute","✈ back "+fmt(r.away.until));
+  if(r.birthdaySoon) tags+=badge("accent","🎂 "+fmt(r.birthdaySoon));
+
+  const a=cpN++; const b=cpN++;
+  let body="";
+  body+=kv("Why this is here",r.why);
+  body+=kv("Context",r.context);
+  if(r.booked) body+=kv("Booked",fmtT(r.booked));
+  if(r.form) body+=kv("Form submitted",fmt(r.form));
+  if(r.away) body+=kv("Away",r.away.why+", back "+fmt(r.away.until)+(r.awayUnverified?" (unverified, note used a relative date)":""));
+  body+=copyBlock(r.copy2?"Message 1 — send "+fmt(r.birthdaySoon):"Suggested message",r.copy,a);
+  if(r.copy2) body+=copyBlock("Message 2 — send the day after",r.copy2,b);
+  if(r.copyNote) body+='<div class="note">'+esc(r.copyNote)+'</div>';
+
+  return '<article class="card s-'+sev+'" data-name="'+esc(r.name.toLowerCase())+'">'+
+    '<div class="head"><span class="caret">▶</span><div class="mid">'+
+      '<div class="who">'+esc(r.name)+' <span style="font-weight:400;color:var(--muted);font-size:13px">· '+esc(r.tenure)+' · review '+fmt(r.due)+'</span></div>'+
+      '<div class="act">'+esc(r.action)+'</div>'+
+      '<div style="margin-top:7px">'+gates(r)+'</div>'+
+    '</div><div class="rt">'+tags+'</div></div>'+
+    '<div class="body">'+body+'</div></article>';
+}
+
+/* ---------------- onramp card ---------------- */
+function onrampCard(m){
+  let dots="";
+  for(let i=1;i<=m.of;i++) dots+='<span class="dot'+(i<=m.session?" on":"")+'"></span>';
+  let tags=badge("accent","session "+m.session+" of "+m.of);
+  tags+=badge("mute","week "+m.week);
+  if(m.drift) tags+=badge("warning","⚠ Notion says "+m.notionSays);
+  const dl=days(m.next.due);
+  tags+=badge(dl<=0?"critical":(dl<=1?"serious":"good"),"next touch "+rel(m.next.due));
+  if(m.flag) tags+=badge("critical","▲ check before sending");
+
+  const a=cpN++;
+  let body="";
+  if(m.flag) body+='<div class="flagbox"><b>Check first.</b> '+esc(m.flag)+'</div>';
+  body+=kv("Their goal, from the No Sweat Intro",m.goal);
+  body+=kv("Watch",m.watch);
+  body+=kv("Latest session note",m.lastNote);
+  body+='<div class="kv"><div class="k">Touchpoint schedule</div><ul class="tl">'+
+    '<li class="now"><b>#'+m.next.tp+' '+esc(m.next.label)+'</b> — '+fmt(m.next.due)+' ('+rel(m.next.due)+') · '+esc(m.next.channel)+'</li>'+
+    m.upcoming.map(u=>'<li><b>#'+u.tp+' '+esc(u.label)+'</b> — '+esc(u.due.replace("~","around "))+'</li>').join("")+
+    '</ul></div>';
+  if(m.schedule&&m.schedule.length){
+    body+='<div class="kv"><div class="k">Remaining sessions</div><div class="v">'+
+      m.schedule.map(s=>"S"+s.n+" "+fmt(s.date)).join(" · ")+'</div></div>';
+  }
+  body+=copyBlock("Suggested message — "+fmt(m.next.due),m.copy,a);
+  if(m.copyNote) body+='<div class="note">'+esc(m.copyNote)+'</div>';
+
+  return '<article class="card s-accent" data-name="'+esc(m.name.toLowerCase())+'">'+
+    '<div class="head"><span class="caret">▶</span><div class="mid">'+
+      '<div class="who">'+esc(m.name)+' <span style="font-weight:400;color:var(--muted);font-size:13px">· started '+fmt(m.start)+'</span></div>'+
+      '<div class="act">'+esc(m.next.label)+' due '+fmt(m.next.due)+'</div>'+
+      '<div class="prog">'+dots+'</div>'+
+    '</div><div class="rt">'+tags+'</div></div>'+
+    '<div class="body">'+body+'</div></article>';
+}
+
+/* ---------------- build panels ---------------- */
+const R=DASH.reviews;
+const order={today:0,overdue:1,thisweek:2,next2weeks:3,hold:4,set:5,done:6};
+const sorted=R.slice().sort((a,b)=>(order[a.bucket]-order[b.bucket])||(a.priority-b.priority));
+
+const queue=sorted.filter(r=>["today","overdue","thisweek","hold"].includes(r.bucket));
+
+function panelQueue(){
+  let h='<div class="legend">'+
+    '<span><i class="sw" style="background:var(--critical)"></i>overdue</span>'+
+    '<span><i class="sw" style="background:var(--serious)"></i>due this week</span>'+
+    '<span><i class="sw" style="background:var(--warning)"></i>hold / needs a decision</span>'+
+    '<span><i class="sw" style="background:var(--accent)"></i>happening today</span>'+
+    '<span><i class="sw" style="background:var(--good)"></i>clear</span>'+
+    '</div>';
+  h+='<div class="toolbar"><input type="search" id="q1" placeholder="Filter by name…"></div>';
+  h+='<h2 class="sec">Goal reviews needing a touch</h2>';
+  h+=queue.map(reviewCard).join("");
+  const orNow=DASH.onramp.filter(m=>days(m.next.due)<=2||m.flag);
+  if(orNow.length){
+    h+='<h2 class="sec">OnRamp touchpoints landing now</h2>'+orNow.map(onrampCard).join("");
+  }
+  const bd=DASH.birthdays.filter(b=>b.days<=7);
+  if(bd.length){
+    h+='<h2 class="sec">Birthdays this week</h2>';
+    h+=bd.map(b=>'<article class="card s-accent" data-name="'+esc(b.name.toLowerCase())+'">'+
+      '<div class="head"><span class="caret" style="visibility:hidden">▶</span><div class="mid">'+
+      '<div class="who">🎂 '+esc(b.name)+'</div><div class="act">'+esc(b.note||"Send a birthday message.")+'</div>'+
+      '</div><div class="rt">'+badge("accent",fmt(b.date)+" · "+rel(b.date))+'</div></div></article>').join("");
+  }
+  return h;
+}
+
+function panelReviews(){
+  let h='<div class="toolbar"><input type="search" id="q2" placeholder="Filter by name…">'+
+    ['all','overdue','thisweek','next2weeks','set','done'].map((k,i)=>
+      '<button class="chip" data-f="'+k+'" aria-pressed="'+(i===0)+'">'+
+      ({all:"All",overdue:"Overdue",thisweek:"This week",next2weeks:"Next 2 weeks",set:"Booked",done:"Complete"})[k]+'</button>').join("")+
+    '</div>';
+  h+='<div class="legend"><span>Gates, left to right: <b style="color:var(--ink)">invited → form → booked → done</b></span>'+
+    '<span><i class="sw" style="background:var(--good)"></i>cleared</span>'+
+    '<span><i class="sw" style="background:var(--critical)"></i>where it is stuck</span></div>';
+  h+='<div id="revlist">'+sorted.map(reviewCard).join("")+'</div>';
+  return h;
+}
+
+function panelOnramp(){
+  let h='<h2 class="sec">In OnRamp</h2>'+DASH.onramp.map(onrampCard).join("");
+  h+='<h2 class="sec">1:1 personal training — not on the OnRamp sequence</h2>';
+  h+=DASH.ptClients.map(p=>'<article class="card s-warning" data-name="'+esc(p.name.toLowerCase())+'">'+
+    '<div class="head"><span class="caret">▶</span><div class="mid">'+
+    '<div class="who">'+esc(p.name)+' <span style="font-weight:400;color:var(--muted);font-size:13px">· started '+fmt(p.start)+'</span></div>'+
+    '<div class="act">'+esc(p.package)+'</div></div>'+
+    '<div class="rt">'+badge("warning","⚠ exclude from OnRamp texts")+(p.mediaOptOut?badge("critical","✕ media opt-out"):"")+'</div></div>'+
+    '<div class="body">'+
+      (p.flag?'<div class="flagbox"><b>Standing rule.</b> '+esc(p.flag)+'</div>':"")+
+      kv("Why she is listed separately",p.note)+
+      kv("Schedule",p.schedule)+
+      kv("Away",p.away.map(a=>fmt(a.from)+" to "+fmt(a.to)+" ("+a.why+")").join(" · "))+
+    '</div></article>').join("");
+  return h;
+}
+
+function panelBirthdays(){
+  let h='<h2 class="sec">Coming up</h2>';
+  h+=DASH.birthdays.map(b=>'<article class="card s-'+(b.days<=7?"accent":"good")+'" data-name="'+esc(b.name.toLowerCase())+'">'+
+    '<div class="head"><span class="caret" style="visibility:hidden">▶</span><div class="mid">'+
+    '<div class="who">🎂 '+esc(b.name)+'</div>'+(b.note?'<div class="act">'+esc(b.note)+'</div>':"")+
+    '</div><div class="rt">'+badge(b.days<=7?"accent":"mute",fmt(b.date)+" · "+rel(b.date))+'</div></div></article>').join("");
+  h+='<h2 class="sec">Just passed — confirm these were acknowledged</h2>';
+  h+=DASH.birthdaysPassed.map(b=>'<article class="card s-warning" data-name="'+esc(b.name.toLowerCase())+'">'+
+    '<div class="head"><span class="caret" style="visibility:hidden">▶</span><div class="mid">'+
+    '<div class="who">'+esc(b.name)+'</div><div class="act">'+esc(b.note)+'</div>'+
+    '</div><div class="rt">'+badge("warning","⚠ "+fmt(b.date))+'</div></div></article>').join("");
+  return h;
+}
+
+function panelDrift(){
+  const lab={critical:"▲ Blocks the build",serious:"● Fix soon",warning:"⚠ Needs a field",good:"✓ Resolved"};
+  let h='<div class="legend"><span>These are places the data disagrees with what is actually happening. The dashboard reads around them, but they should be fixed at the source.</span></div>';
+  h+=DASH.drift.map(x=>'<article class="card s-'+x.severity+'">'+
+    '<div class="head"><span class="caret">▶</span><div class="mid">'+
+    '<div class="who">'+esc(x.title)+'</div></div>'+
+    '<div class="rt">'+badge(x.severity,lab[x.severity])+'</div></div>'+
+    '<div class="body">'+kv("What is happening",x.detail)+kv("Fix",x.fix)+'</div></article>').join("");
+  h+='<h2 class="sec">The reminder cadence this dashboard computes</h2>';
+  h+='<div class="card s-accent"><div class="head" style="cursor:default"><span class="caret" style="visibility:hidden">▶</span><div class="mid">'+
+    '<div class="who">One date in, every reminder out</div>'+
+    '<div class="act">Emily enters the invitation date. Everything below is derived. Form submissions from Gmail cancel the rest automatically.</div>'+
+    '<ul class="tl" style="margin-top:12px">'+DASH.sequence.map(s=>
+      '<li><b>Invitation + '+s.day+' days</b> — '+esc(s.label)+'</li>').join("")+'</ul>'+
+    '</div></div></div>';
+  return h;
+}
+
+/* ---------------- tiles ---------------- */
+function tiles(){
+  const overdue=R.filter(r=>r.bucket==="overdue").length;
+  const week=R.filter(r=>["today","thisweek"].includes(r.bucket)).length;
+  const noForm=R.filter(r=>!r.form&&!r.completed&&r.invited).length;
+  const noBook=R.filter(r=>r.form&&!r.booked&&!r.completed).length;
+  const notInvited=R.filter(r=>!r.invited).length;
+  const t=[
+    ["crit",overdue,"Overdue reviews"],
+    ["warn",week,"Due this week"],
+    ["acc",noForm,"Waiting on a form"],
+    ["acc",noBook,"Form in, not booked"],
+    ["warn",notInvited,"Invitation not sent"],
+    ["ok",DASH.onramp.length,"In OnRamp"]
+  ];
+  $("#tiles").innerHTML=t.map(x=>'<div class="tile '+x[0]+'"><div class="v">'+x[1]+'</div><div class="k">'+x[2]+'</div></div>').join("");
+}
+
+/* ---------------- tabs ---------------- */
+const PANELS=[
+  ["queue","Action queue",()=>queue.length+DASH.birthdays.filter(b=>b.days<=7).length,panelQueue],
+  ["reviews","Goal reviews",()=>R.length,panelReviews],
+  ["onramp","OnRamp",()=>DASH.onramp.length+DASH.ptClients.length,panelOnramp],
+  ["birthdays","Birthdays",()=>DASH.birthdays.filter(b=>b.days<=30).length,panelBirthdays],
+  ["drift","Data fixes",()=>DASH.drift.filter(x=>x.severity!=="good").length,panelDrift]
+];
+
+function boot(){
+  $("#stamp").innerHTML="Tuesday, August 11, 2026 · built from Gmail, Google Calendar and Notion · "+
+    '<span style="color:var(--ink-2)">refreshed 2:30pm</span>';
+  tiles();
+  $("#tabs").innerHTML=PANELS.map((p,i)=>
+    '<button role="tab" data-p="'+p[0]+'" aria-selected="'+(i===0)+'">'+p[1]+
+    '<span class="cnt">'+p[2]()+'</span></button>').join("");
+  PANELS.forEach(p=>{ $("#p-"+p[0]).innerHTML=p[3](); });
+
+  $("#tabs").addEventListener("click",e=>{
+    const b=e.target.closest("button[data-p]"); if(!b) return;
+    $("#tabs").querySelectorAll("button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    PANELS.forEach(p=>{ $("#p-"+p[0]).hidden = (p[0]!==b.dataset.p); });
+  });
+
+  document.body.addEventListener("click",e=>{
+    const cb=e.target.closest("[data-copy]");
+    if(cb){
+      e.stopPropagation();
+      const el=$("#cp"+cb.dataset.copy);
+      copyText(el.textContent).then(ok=>{
+        if(ok){
+          cb.textContent="Copied"; cb.classList.add("done");
+          setTimeout(()=>{cb.textContent="Copy";cb.classList.remove("done");},1600);
+        }else{
+          // clipboard blocked (some embeds disallow it) — select the text so
+          // the reader can hit Cmd+C, and say so rather than failing silently
+          selectNode(el);
+          cb.textContent="Press Cmd+C"; cb.classList.add("done");
+          setTimeout(()=>{cb.textContent="Copy";cb.classList.remove("done");},2600);
+        }
+      });
+      return;
+    }
+    const h=e.target.closest(".card > .head");
+    if(h && h.parentElement.querySelector(".body")) h.parentElement.classList.toggle("open");
+  });
+
+  document.body.addEventListener("input",e=>{
+    if(e.target.type!=="search") return;
+    const v=e.target.value.trim().toLowerCase();
+    e.target.closest("section").querySelectorAll(".card[data-name]").forEach(c=>{
+      c.style.display = (!v || c.dataset.name.includes(v)) ? "" : "none";
+    });
+  });
+
+  $("#p-reviews").addEventListener("click",e=>{
+    const c=e.target.closest(".chip"); if(!c) return;
+    $("#p-reviews").querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",x===c));
+    const f=c.dataset.f;
+    const cards=$("#revlist").children;
+    for(let i=0;i<cards.length;i++){
+      const r=sorted[i];
+      let show = f==="all" || r.bucket===f ||
+        (f==="thisweek" && r.bucket==="today") ||
+        (f==="set" && r.bucket==="set") ||
+        (f==="overdue" && r.bucket==="hold");
+      cards[i].style.display=show?"":"none";
+    }
+  });
+
+  const tb=$("#themeBtn");
+  tb.addEventListener("click",()=>{
+    const dark=document.documentElement.dataset.theme==="dark";
+    document.documentElement.dataset.theme=dark?"light":"dark";
+    tb.textContent=dark?"Dark":"Light";
+  });
+  if(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches){
+    document.documentElement.dataset.theme="dark"; tb.textContent="Light";
+  }
+
+  $("#foot").innerHTML=
+    "<b>Where this comes from.</b> Goal review form submissions are read from Gmail. "+
+    "Booked conversations are read from Josh's Google Calendar. Member records, OnRamp position, "+
+    "session notes and birthdays are read from Notion. Nothing here writes back to Notion — "+
+    "where the two disagree it is listed under Data fixes.<br>"+
+    "<b>Due dates</b> are computed as last completed review plus three months, with start date plus 90 days "+
+    "seeding a member's first review. The Next Review Date field in Notion is not used.<br>"+
+    "<b>Copy</b> is drafted in Emily's voice from the approved onboarding sequence, with one specific detail "+
+    "pulled from that member's most recent session note. Read it before you send it.";
+}
+/* Never show a blank page. If anything throws, say what and stay readable. */
+function panic(msg){
+  const w=document.querySelector(".wrap");
+  if(!w||document.getElementById("panicBar")) return;
+  const d=document.createElement("div");
+  d.id="panicBar";
+  d.style.cssText="background:var(--wash-critical);border:1px solid var(--critical);"+
+    "color:var(--ink);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13.5px;line-height:1.6";
+  d.innerHTML="<b>Something on this page failed to load.</b><br>"+
+    "The data below may be incomplete. Send Josh this message so it can be fixed:<br>"+
+    '<code style="font-size:12px;color:var(--critical);word-break:break-all">'+
+    String(msg).replace(/[<>&]/g,"")+"</code>";
+  w.insertBefore(d,w.firstChild.nextSibling);
+}
+window.addEventListener("error",e=>panic(e.message||"unknown error"));
+window.addEventListener("unhandledrejection",e=>panic((e.reason&&e.reason.message)||e.reason||"promise rejected"));
+
+/* Stale-data guard: if the morning rebuild stops running, say so loudly rather
+   than quietly showing yesterday's queue as if it were today's. */
+function freshness(){
+  const age=Math.round((new Date()-new Date(DASH.generated))/864e5);
+  if(age<2) return;
+  const w=document.querySelector(".wrap");
+  const d=document.createElement("div");
+  d.style.cssText="background:var(--wash-warning);border:1px solid var(--warning);"+
+    "border-radius:10px;padding:13px 16px;margin-bottom:16px;font-size:13.5px";
+  d.innerHTML="<b>⚠ This dashboard is "+age+" days old.</b> The daily rebuild has not run since "+
+    new Date(DASH.generated).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})+
+    ". Treat everything below as out of date until it refreshes.";
+  w.insertBefore(d,w.firstChild.nextSibling);
+}
+
+try{ boot(); freshness(); }catch(err){ panic(err&&err.message?err.message:err); }
+})();
+</script>
+</body>
+</html>
